@@ -19,6 +19,7 @@
 #ifndef __YDIRECTENV_H__
 #define __YDIRECTENV_H__
 
+#include <xdc/runtime/System.h>
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
@@ -61,7 +62,7 @@ size_t strnlen(const char *s, size_t maxlen);
 #define hweight8(x)	yaffs_hweight8(x)
 #define hweight32(x)	yaffs_hweight32(x)
 
-#define sort(base, n, sz, cmp_fn, swp) qsort(base, n, sz, cmp_fn)
+#define yaffs_sort(base, n, sz, cmp_fn, swp) qsort(base, n, sz, cmp_fn)
 
 #define YAFFS_PATH_DIVIDERS  "/"
 
@@ -83,12 +84,12 @@ size_t strnlen(const char *s, size_t maxlen);
 #else
 #define yaffs_trace(msk, fmt, ...) do { \
 	if (yaffs_trace_mask & (msk)) \
-		printf("yaffs: " fmt "\n", ##__VA_ARGS__); \
+		System_printf("yaffs: " fmt "\n", ##__VA_ARGS__); \
 } while (0)
 
 #endif
 
-#define YAFFS_LOSTNFOUND_NAME		"lost+found"
+#define YAFFS_LOSTNFOUND_NAME		".lost+found"
 #define YAFFS_LOSTNFOUND_PREFIX		"obj"
 
 #include "yaffscfg.h"

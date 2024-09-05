@@ -3583,6 +3583,7 @@ struct yaffs_dirent *yaffsfs_readdir_no_lock(yaffs_DIR * dirp)
 {
 	struct yaffsfs_DirSearchContext *dsc;
 	struct yaffs_dirent *retVal = NULL;
+	struct yaffs_obj	*eq_obj;
 
 	dsc = (struct yaffsfs_DirSearchContext *) dirp;
 
@@ -3590,8 +3591,9 @@ struct yaffs_dirent *yaffsfs_readdir_no_lock(yaffs_DIR * dirp)
 	if (dsc && dsc->inUse) {
 		yaffsfs_SetError(0);
 		if (dsc->nextReturn) {
-			dsc->de.d_ino =
-			    yaffs_get_equivalent_obj(dsc->nextReturn)->obj_id;
+			eq_obj = yaffs_get_equivalent_obj(dsc->nextReturn);
+			dsc->de.d_ino =	eq_obj->obj_id;
+			dsc->de.d_type = yaffs_get_obj_type(eq_obj);
 			dsc->de.d_dont_use = 0;
 			dsc->de.d_off = dsc->offset++;
 			yaffs_get_obj_name(dsc->nextReturn,

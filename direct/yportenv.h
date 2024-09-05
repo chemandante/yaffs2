@@ -17,10 +17,7 @@
 #define __YPORTENV_H__
 
 
-#ifdef __rtems__
-
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -31,10 +28,15 @@
 #define CONFIG_YAFFSFS_PROVIDE_VALUES 1
 #define CONFIG_YAFFS_DEFINES_TYPES 1
 #define CONFIG_YAFFS_USE_32_BIT_TIME_T 1
-#define NO_Y_INLINE 1
-#define loff_t off_t
+/**
+ * \def CONFIG_YAFFS_NO_YAFFS1
+ *
+ * Used to disable YAFFS1 code. Uncomment to disable.
+ */
+#define CONFIG_YAFFS_NO_YAFFS1
 
-#endif /* __rtems__ */
+#define NO_Y_INLINE 1
+#define loff_t off64_t
 
 /* Definition of types */
 #ifdef CONFIG_YAFFS_DEFINES_TYPES

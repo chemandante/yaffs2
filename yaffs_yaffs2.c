@@ -1626,7 +1626,7 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 	cond_resched();
 
 	/* Sort the blocks by sequence number */
-	sort(block_index, n_to_scan, sizeof(struct yaffs_block_index),
+	yaffs_sort(block_index, n_to_scan, sizeof(struct yaffs_block_index),
 		   yaffs2_ybicmp, NULL);
 
 	cond_resched();

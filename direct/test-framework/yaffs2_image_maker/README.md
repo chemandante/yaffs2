@@ -1,4 +1,7 @@
-How to use the image maker
+# How to use the image maker and dumper
+
+
+# Image Maker
 
 The purpose of this image maker is to create image files that can be burned into NAND.
 
@@ -33,3 +36,47 @@ Note:
  It is Ok if there are bad blocks. Yaffs is designed to handle bad blocks.
 
 
+# Dumper
+
+The purpose of the dumper is to view or extract files from a Yaffs2 flash image.
+
+It is suggested t first do a listing by not specifying an output directory.
+
+```
+./yaffs2_dumper -i rfs.bin -I -c 2048 -B 64
+```
+Output is something like:
+
+```
+Generating listing from file padded_file.bin
+Output file is in little endian
+input file padded_file.bin size is 1310720
+Flash geometry is:
+    chunk_size........2048
+    total page size...2048
+    chunks per block..64
+    block size........131072
+    n blocks..........10
+    inband tags.......yes
+
+yaffs_mount returned 0
+yroot/lost+found inode 2 length 2032 mode 41C0 directory
+yroot/lost+found/obj296 inode 296 length 2032 mode 4000 directory
+yroot/lost+found/obj296/expand inode 312 length 17 mode A1FF symlink -->"../../bin/busybox"
+yroot/lost+found/obj296/sv inode 313 length 17 mode A1FF symlink -->"../../bin/busybox"
+yroot/lost+found/obj296/man inode 314 length 17 mode A1FF symlink -->"../../bin/busybox"
+...
+Free space in yroot is 904240
+```
+
+
+To actually dump the files you need to specify an output directory.
+
+```
+./yaffs2_dumper -i rfs.bin -o foo -I -c 2048 -N 64
+```
+
+The program will abort if the output directory exists. It is your job to
+clean that up first.
+You're writing to the main file system here, so it is a good idea to first
+do just a listing.

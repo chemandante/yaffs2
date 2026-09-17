@@ -159,7 +159,7 @@ u8 *yaffs_get_temp_buffer(struct yaffs_dev * dev)
 	 */
 
 	dev->unmanaged_buffer_allocs++;
-	return kmalloc(dev->data_bytes_per_chunk, GFP_NOFS);
+	return kmalloc(dev->param.total_bytes_per_chunk, GFP_NOFS);
 
 }
 
@@ -254,14 +254,16 @@ static void yaffs_handle_chunk_wr_error(struct yaffs_dev *dev, int nand_chunk,
  */
 
 /*
- *  Simple hash function. Needs to have a reasonable spread
+ * Simple hash function. Needs to have a reasonable spread.
+ * This was a %, but now explicitly uses & and expects
+ * YAFFS_NOBJECT_BUCKETS to be a power of 2.
  */
 
 static inline int yaffs_hash_fn(int n)
 {
 	if (n < 0)
 		n = -n;
-	return n % YAFFS_NOBJECT_BUCKETS;
+	return n & (YAFFS_NOBJECT_BUCKETS - 1);
 }
 
 /*
@@ -497,7 +499,7 @@ static int yaffs_write_new_chunk(struct yaffs_dev *dev,
 	yaffs2_checkpt_invalidate(dev);
 
 	do {
-		struct yaffs_block_info *bi = 0;
+		struct yaffs_block_info *bi = NULL;
 		int erased_ok = 0;
 
 		chunk = yaffs_alloc_chunk(dev, use_reserver, &bi);
@@ -699,7 +701,7 @@ static void yaffs_load_oh_from_name(struct yaffs_dev *dev, YCHAR *oh_name,
 		}
 	} else {
 #else
-	dev = dev;
+	(void) dev; /* dev unused */
 	{
 #endif
 		strncpy(oh_name, name, YAFFS_MAX_NAME_LENGTH - 1);
@@ -1126,7 +1128,7 @@ int yaffs_put_chunk_in_file(struct yaffs_obj *in, int inode_chunk,
 
 	struct yaffs_tnode *tn;
 	struct yaffs_dev *dev = in->my_dev;
-	int existing_cunk;
+	int existing_chunk;
 	struct yaffs_ext_tags existing_tags;
 	struct yaffs_ext_tags new_tags;
 	unsigned existing_serial, new_serial;
@@ -1157,7 +1159,7 @@ int yaffs_put_chunk_in_file(struct yaffs_obj *in, int inode_chunk,
 		/* Dummy insert, bail now */
 		return YAFFS_OK;
 
-	existing_cunk = yaffs_get_group_base(dev, tn, inode_chunk);
+	existing_chunk = yaffs_get_group_base(dev, tn, inode_chunk);
 
 	if (in_scan != 0) {
 		/* If we're scanning then we need to test for duplicates
@@ -1171,7 +1173,7 @@ int yaffs_put_chunk_in_file(struct yaffs_obj *in, int inode_chunk,
 		 * so this is quite cheap.
 		 */
 
-		if (existing_cunk > 0) {
+		if (existing_chunk > 0) {
 			/* NB Right now existing chunk will not be real
 			 * chunk_id if the chunk group size > 1
 			 * thus we have to do a FindChunkInFile to get the
@@ -1193,12 +1195,12 @@ int yaffs_put_chunk_in_file(struct yaffs_obj *in, int inode_chunk,
 							 NULL, &new_tags);
 
 				/* Do a proper find */
-				existing_cunk =
+				existing_chunk =
 				    yaffs_find_chunk_in_file(in, inode_chunk,
 							     &existing_tags);
 			}
 
-			if (existing_cunk <= 0) {
+			if (existing_chunk <= 0) {
 				/*Hoosterman - how did this happen? */
 
 				yaffs_trace(YAFFS_TRACE_ERROR,
@@ -1217,14 +1219,14 @@ int yaffs_put_chunk_in_file(struct yaffs_obj *in, int inode_chunk,
 			}
 
 			if ((in_scan > 0) &&
-			    (existing_cunk <= 0 ||
+			    (existing_chunk <= 0 ||
 			     ((existing_serial + 1) & 3) == new_serial)) {
 				/* Forward scanning.
 				 * Use new
 				 * Delete the old one and drop through to
 				 * update the tnode
 				 */
-				yaffs_chunk_del(dev, existing_cunk, 1,
+				yaffs_chunk_del(dev, existing_chunk, 1,
 						__LINE__);
 			} else {
 				/* Backward scanning or we want to use the
@@ -1239,7 +1241,7 @@ int yaffs_put_chunk_in_file(struct yaffs_obj *in, int inode_chunk,
 
 	}
 
-	if (existing_cunk == 0)
+	if (existing_chunk == 0)
 		in->n_data_chunks++;
 
 	yaffs_load_tnode_0(dev, tn, inode_chunk, nand_chunk);
@@ -1677,7 +1679,7 @@ static int yaffs_find_nice_bucket(struct yaffs_dev *dev)
 
 	for (i = 0; i < 10 && lowest > 4; i++) {
 		dev->bucket_finder++;
-		dev->bucket_finder %= YAFFS_NOBJECT_BUCKETS;
+		dev->bucket_finder &= (YAFFS_NOBJECT_BUCKETS - 1);
 		if (dev->obj_bucket[dev->bucket_finder].count < lowest) {
 			lowest = dev->obj_bucket[dev->bucket_finder].count;
 			l = dev->bucket_finder;
@@ -4273,7 +4275,7 @@ static void yaffs_fix_null_name(struct yaffs_obj *obj, YCHAR *name,
 				int buffer_size)
 {
 	/* Create an object name if we could not find one. */
-	if (strnlen(name, YAFFS_MAX_NAME_LENGTH) == 0) {
+	if (strnlen(name, buffer_size) == 0) {
 		YCHAR local_name[20];
 		YCHAR num_string[20];
 		YCHAR *x = &num_string[19];
